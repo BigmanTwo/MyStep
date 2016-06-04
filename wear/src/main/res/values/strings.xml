@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">MyStep</string>
+    <string name="hello_round">Hello Round World!</string>
+    <string name="hello_square">Hello Square World!</string>
+    <string name="step_count">今日步数</string>
+    <string name="step_demo">计步Demo</string>
+
+</resources>

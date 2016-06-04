@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">MyStep</string>
+    <string name="start_step">Start Step Activity</string>
+    <string name="step_text">当前步数:</string>
+    <string name="title_activity_step">Steps</string>
+</resources>

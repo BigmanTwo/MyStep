@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:android_custem="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+    <com.example.asus.mystep.RoundProgressBar
+        android:layout_width="300px"
+        android:layout_height="300px"
+        android:id="@+id/progress"
+        android:layout_centerInParent="true"
+        android_custem:roundColor="#D1D1D1"
+        android_custem:roundProgressColor="@android:color/holo_red_light"
+        android_custem:textColor="#f5f2f3"
+        android_custem:textSize="50sp"
+        android_custem:roundWidth="10dip"/>
+
+    <TextView
+        android:id="@+id/step_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/step_demo"
+        android:textSize="15sp"
+        android:layout_alignTop="@+id/progress"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="48dp" />
+</RelativeLayout>
