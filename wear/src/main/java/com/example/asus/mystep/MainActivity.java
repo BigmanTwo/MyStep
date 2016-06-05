@@ -1,64 +1,98 @@
 package com.example.asus.mystep;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
-import android.database.Cursor;
+import android.gesture.Gesture;
 import android.net.Uri;
 import android.os.Bundle;
+
 import android.os.Handler;
 import android.os.Message;
-import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
 import android.view.WindowManager;
-import android.widget.TextView;
+import android.widget.Toast;
 
 import com.mobvoi.android.common.ConnectionResult;
 import com.mobvoi.android.common.api.MobvoiApiClient;
 import com.mobvoi.android.common.api.ResultCallback;
+import com.mobvoi.android.gesture.GestureType;
+import com.mobvoi.android.gesture.MobvoiGestureClient;
 import com.mobvoi.android.wearable.MessageApi;
 import com.mobvoi.android.wearable.MessageEvent;
 import com.mobvoi.android.wearable.Node;
 import com.mobvoi.android.wearable.NodeApi;
 import com.mobvoi.android.wearable.Wearable;
 
+
 public class MainActivity extends Activity implements MobvoiApiClient.ConnectionCallbacks,
-        MobvoiApiClient.OnConnectionFailedListener, NodeApi.NodeListener, MessageApi.MessageListener{
+        MobvoiApiClient.OnConnectionFailedListener, NodeApi.NodeListener, MessageApi.MessageListener {
     private static final Uri STEP_URI = Uri.parse("content://com.mobvoi.ticwear.steps");
-    private static final String DEFAULT_NODE = "default_node";
     private static final String TAG = "StepActivity";
-
-    private ContentResolver mResolver;
+    private static final String DEFAULT_NODE = "default_node";
     private int mSteps;
-    private ContentObserver mObserver;
-    private TextView mStepTv;
     private MobvoiApiClient mMobvoiApiClient;
-    private RoundProgressBar roundProgressBar;
-    @SuppressLint("HandlerLeak")
-    private Handler mHandler = new Handler() {
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            roundProgressBar.setProgress(mSteps);
-            mStepTv.setText(getString(R.string.step_count));
-            sendMessagetoPhone();
-        }
-    };
+    private FragmentManager manager;
+    private MainFragment mainFragment;
+    private UpFragment upFragment;
+    private MobvoiGestureClient client;
+    private Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        roundProgressBar=(RoundProgressBar)findViewById(R.id.progress);
-        init();
+        mHandler = new Handler();
+        mMobvoiApiClient = new MobvoiApiClient.Builder(this)
+                .addApi(Wearable.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+        manager = getFragmentManager();
+        FragmentTransaction transaction = manager.beginTransaction();
+        mainFragment = new MainFragment();
+        mSteps = mainFragment.getmSteps();
+        transaction.add(R.id.frame_select, mainFragment, "").commit();
+
     }
+
+
     @Override
     protected void onResume() {
         super.onResume();
         mMobvoiApiClient.connect();
+        client = MobvoiGestureClient.getInstance(GestureType.GROUP_TURN_WRIST);
+        client.register(MainActivity.this, new MobvoiGestureClient.IGestureDetectedCallback() {
+            @Override
+            public void onGestureDetected(final int type) {
+
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        FragmentTransaction transaction = manager.beginTransaction();
+                        String s = "";
+                        if (type == GestureType.TYPE_TWICE_TURN_WRIST) {
+                            //翻两次手腕
+                        } else if (type == GestureType.TYPE_TURN_WRIST_UP) {
+                            s = "向上翻页";
+
+                            upFragment = new UpFragment();//向上翻页
+                            transaction.replace(R.id.frame_select, upFragment);
+                            transaction.addToBackStack(null).commit();
+                        } else if (type == GestureType.TYPE_TURN_WRIST_DOWN) {
+                            //向下翻页
+                        } else {
+
+                        }
+                        Toast.makeText(getApplicationContext(), "onGestureDetected " + s, Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -67,61 +101,7 @@ public class MainActivity extends Activity implements MobvoiApiClient.Connection
         Wearable.MessageApi.removeListener(mMobvoiApiClient, this);
         Wearable.NodeApi.removeListener(mMobvoiApiClient, this);
         mMobvoiApiClient.disconnect();
-    }
-
-    private void init() {
-        mStepTv = (TextView) findViewById(R.id.step_tv);
-
-        mResolver = this.getContentResolver();
-        mObserver = new ContentObserver(mHandler) {
-            @Override
-            public boolean deliverSelfNotifications() {
-                return super.deliverSelfNotifications();
-            }
-
-            @Override
-            public void onChange(boolean selfChange) {
-                super.onChange(selfChange);
-                mSteps = fetchSteps();
-
-                Message.obtain(mHandler, mSteps).sendToTarget();
-            }
-        };
-        mMobvoiApiClient = new MobvoiApiClient.Builder(this)
-                .addApi(Wearable.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .build();
-        mSteps = fetchSteps();
-        roundProgressBar.setProgress(mSteps);
-        mStepTv.setText(getString(R.string.step_count));
-        registerContentObserver();
-    }
-
-    private int fetchSteps() {
-        int steps = 0;
-        int distance=0;
-        Cursor cursor = mResolver.query(STEP_URI, null, null, null, null);
-        if (cursor != null) {
-            try {
-                if (cursor.moveToNext()) {
-                    steps = cursor.getInt(0);
-                    //距离的单位是米
-                    distance=cursor.getInt(1);
-                }
-            } finally {
-                cursor.close();
-            }
-        }
-        return steps;
-    }
-
-    private void registerContentObserver() {
-        mResolver.registerContentObserver(STEP_URI, true, mObserver);
-    }
-
-    private void unregisterContentObserver() {
-        mResolver.unregisterContentObserver(mObserver);
+        client.unregister(this);
     }
 
     @Override
@@ -158,7 +138,7 @@ public class MainActivity extends Activity implements MobvoiApiClient.Connection
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterContentObserver();
+
     }
 
     private void sendMessagetoPhone() {
