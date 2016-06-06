@@ -97,7 +97,7 @@ public class RoundProgressBar extends View {
         paint.setColor(textColor);
         paint.setTextSize(textSize);
         paint.setTypeface(Typeface.DEFAULT_BOLD);
-        int percent= (int) (((float)progress/(float)max)*100);
+        float percent=  (((float)progress/(float)max)*100);
         float textWidth=paint.measureText(String.valueOf(progress));
         if (textIsDisplay && percent!=0 && style==STROKE) {
             canvas.drawText(String.valueOf(progress),center-textWidth/2,center+textWidth/2,paint);

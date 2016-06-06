@@ -39,7 +39,7 @@ public class MainActivity extends Activity implements MobvoiApiClient.Connection
     private UpFragment upFragment;
     private MobvoiGestureClient client;
     private Handler mHandler;
-
+    int a=0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,6 +65,7 @@ public class MainActivity extends Activity implements MobvoiApiClient.Connection
         super.onResume();
         mMobvoiApiClient.connect();
         client = MobvoiGestureClient.getInstance(GestureType.GROUP_TURN_WRIST);
+
         client.register(MainActivity.this, new MobvoiGestureClient.IGestureDetectedCallback() {
             @Override
             public void onGestureDetected(final int type) {
@@ -73,22 +74,29 @@ public class MainActivity extends Activity implements MobvoiApiClient.Connection
                     @Override
                     public void run() {
                         FragmentTransaction transaction = manager.beginTransaction();
-                        String s = "";
+                        String s="";
                         if (type == GestureType.TYPE_TWICE_TURN_WRIST) {
-                            //翻两次手腕
+                            s="向上翻页111";
+                            if(a==0) {
+                                upFragment = new UpFragment();//向上翻页
+                                transaction.replace(R.id.frame_select, upFragment);
+                                transaction.addToBackStack(null).commit();
+                                a=1;
+                            }else{
+                                mainFragment=new MainFragment();
+                                transaction.replace(R.id.frame_select,mainFragment);
+                                transaction.addToBackStack(null).commit();
+                                a=0;
+                            }
                         } else if (type == GestureType.TYPE_TURN_WRIST_UP) {
-                            s = "向上翻页";
+                            s="向上翻页";
 
-                            upFragment = new UpFragment();//向上翻页
-                            transaction.replace(R.id.frame_select, upFragment);
-                            transaction.addToBackStack(null).commit();
                         } else if (type == GestureType.TYPE_TURN_WRIST_DOWN) {
-                            //向下翻页
+                            s="向下翻页";//向下翻页
                         } else {
-
+                            s="向下翻页11";
                         }
-                        Toast.makeText(getApplicationContext(), "onGestureDetected " + s, Toast.LENGTH_SHORT).show();
-
+                        Toast.makeText(getApplication(),"方向"+s,Toast.LENGTH_SHORT).show();
                     }
                 });
             }
